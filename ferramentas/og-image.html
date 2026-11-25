@@ -1,0 +1,48 @@
+<!doctype html>
+<!--
+  Modelo da imagem de compartilhamento (assets/og-image.png, 1200x630).
+  Para gerar de novo: ferramentas/gerar-imagens.sh
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@500;700;800&display=swap">
+<style>
+  html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    font-family: "Hanken Grotesk", "Segoe UI", sans-serif; color: #F4EFE9;
+    background:
+      repeating-linear-gradient(-38deg, transparent 0 34px, rgba(194,155,110,.07) 34px 35px),
+      radial-gradient(70% 90% at 100% 0%, rgba(194,155,110,.22), transparent 60%),
+      linear-gradient(160deg, #0C2B3A, #061219 70%);
+    display: grid; grid-template-columns: 1fr 420px; align-items: center; padding: 0 72px; box-sizing: border-box; gap: 40px;
+  }
+  .brand { display: flex; align-items: center; gap: 18px; margin-bottom: 48px; }
+  .brand img { width: 92px; }
+  .brand b { display: block; font-weight: 800; letter-spacing: .22em; font-size: 30px; line-height: 1; }
+  .brand span { display: block; font-weight: 700; letter-spacing: .5em; font-size: 15px; color: #C29B6E; margin-top: 8px; }
+  h1 { margin: 0; font-size: 62px; line-height: 1.04; letter-spacing: -0.03em; font-weight: 800; }
+  h1 em { font-style: normal; color: #D8B88F; }
+  p { margin: 26px 0 0; font-size: 26px; color: #B9C6CC; font-weight: 500; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .tile { aspect-ratio: 9 / 13; border: 1.5px solid #24475A; border-radius: 16px; background: rgba(11,31,42,.75); display: grid; place-items: center; color: #D8B88F; position: relative; }
+  .tile svg { width: 78%; height: auto; }
+  .tile small { position: absolute; left: 10px; bottom: 8px; font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #9AAAB2; }
+</style>
+</head>
+<body>
+  <div>
+    <div class="brand"><img src="../assets/logo-mirano-dark.svg" alt=""><div><b>MIRANO</b><span>SETUP</span></div></div>
+    <h1>Vídeos prontos para <em>profissionais de saúde</em></h1>
+    <p>30 vídeos por tema. Compre só o que você atende.</p>
+  </div>
+  <div class="grid" id="grid"></div>
+  <script src="../ilustracoes.js"></script>
+  <script>
+    var temas = [["joelho","Joelho"],["coluna","Coluna"],["pele","Pele"],["pressao-alta","Pressão"],["gengiva","Gengiva"],["ansiedade","Ansiedade"]];
+    document.getElementById("grid").innerHTML = temas.map(function (t) {
+      return '<div class="tile">' + ilustra(t[0], "ilu") + '<small>' + t[1] + '</small></div>';
+    }).join("");
+  </script>
+</body>
+</html>

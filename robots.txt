@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /checkout.html
+Disallow: /src/
+Disallow: /ferramentas/
+
+Sitemap: https://delgado95.github.io/mirano-setup/sitemap.xml

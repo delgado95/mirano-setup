@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pagamento · Mirano Setup</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: checkout em duas colunas (formulário à esquerda, resumo do pedido fixo à direita); vira uma coluna no celular com o resumo no topo. */
+:root {
+  --bg: #061219;
+  --panel: #0B1F2A;
+  --panel-2: #0F2836;
+  --field: #08171F;
+  --line: #183444;
+  --line-2: #24475A;
+  --fg: #F4F1EC;
+  --muted: #9AAAB2;
+  --orange: #C29B6E;
+  --orange-2: #D8B88F;
+  --lime: #D6F54A;
+  --green: #4ADE80;
+  --red: #FF6B6B;
+  --pix: #32BCAD;
+  --font: "Hanken Grotesk", "Segoe UI", system-ui, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body { background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+[hidden] { display: none !important; }
+a { color: inherit; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+
+.band { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1040px; margin: 0 auto; }
+
+.demo { background: #0C2B3A; color: #D8B88F; font-size: .88rem; font-weight: 600; text-align: center; }
+.demo .wrap { padding-block: 8px; }
+
+header.band { border-bottom: 1px solid var(--line); }
+header .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 16px; }
+.logo { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; }
+.logo svg { width: 44px; height: 30px; flex: none; }
+.wordmark { display: grid; line-height: 1; }
+.wordmark b { font-weight: 800; letter-spacing: .2em; font-size: 1rem; }
+.wordmark span { font-weight: 600; letter-spacing: .42em; font-size: .62rem; color: var(--orange); margin-top: 4px; }
+.safe { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: .9rem; font-weight: 600; }
+.safe svg { width: 16px; height: 16px; color: var(--green); }
+
+main.band { padding-block: 32px 72px; }
+.grid { display: grid; grid-template-columns: 1.25fr .9fr; gap: 28px; align-items: start; }
+@media (max-width: 880px) { .grid { grid-template-columns: 1fr; } .summary { order: -1; } }
+
+h1 { font-size: clamp(1.8rem, 3.4vw, 2.4rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.05; margin: 0 0 6px; }
+.it { color: var(--orange); }
+.sub { color: var(--muted); margin: 0 0 24px; }
+
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: clamp(18px, 3vw, 26px); }
+.box + .box { margin-top: 16px; }
+.box-title { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.1rem; margin: 0 0 18px; letter-spacing: -0.01em; }
+.box-title .n { width: 26px; height: 26px; border-radius: 50%; background: rgba(194,155,110,.15); color: var(--orange); display: grid; place-items: center; font-size: .85rem; }
+
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.full { grid-column: 1 / -1; }
+@media (max-width: 520px) { .fields { grid-template-columns: 1fr; } }
+.field { display: grid; gap: 6px; min-width: 0; }
+.field label { font-size: .88rem; font-weight: 700; color: #D8D2CA; }
+.field input, .field select {
+  width: 100%; background: var(--field); border: 1px solid var(--line-2); border-radius: 12px;
+  padding: 14px 14px; font-size: 1rem; font-weight: 500; outline: none; transition: border-color .15s ease;
+}
+.field input::placeholder { color: #6F675F; }
+.field input:focus, .field select:focus { border-color: var(--orange); }
+.field.bad input { border-color: var(--red); }
+.err { color: var(--red); font-size: .82rem; font-weight: 600; min-height: 0; }
+.err:empty { display: none; }
+
+/* Métodos */
+.methods { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+@media (max-width: 440px) { .methods { grid-template-columns: 1fr; } }
+.method {
+  display: flex; align-items: center; gap: 12px; text-align: left; cursor: pointer;
+  background: var(--field); border: 1.5px solid var(--line-2); border-radius: 14px; padding: 14px 16px;
+}
+.method svg { width: 26px; height: 26px; flex: none; }
+.method strong { display: block; font-size: 1rem; }
+.method small { color: var(--muted); font-size: .8rem; }
+.method[aria-pressed="true"] { border-color: var(--orange); background: rgba(194,155,110,.07); }
+.method .radio { margin-left: auto; width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--line-2); flex: none; }
+.method[aria-pressed="true"] .radio { border-color: var(--orange); box-shadow: inset 0 0 0 4px var(--panel), inset 0 0 0 10px var(--orange); }
+
+/* Pix */
+.pix-info { display: grid; gap: 10px; background: var(--field); border: 1px dashed var(--line-2); border-radius: 14px; padding: 16px; }
+.pix-info div { display: grid; grid-template-columns: 20px 1fr; gap: 10px; color: var(--muted); font-size: .95rem; }
+.pix-info svg { width: 18px; height: 18px; color: var(--pix); margin-top: 2px; }
+
+.pix-wait { display: grid; grid-template-columns: auto 1fr; gap: 22px; align-items: start; }
+.qr { background: #fff; padding: 12px; border-radius: 14px; width: 196px; max-width: 100%; }
+.qr canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+.qr-cap { text-align: center; font-size: .72rem; color: #555; font-weight: 600; margin-top: 4px; }
+.pix-steps { display: grid; gap: 14px; min-width: 0; }
+.status { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; }
+.pulse { width: 10px; height: 10px; border-radius: 50%; background: var(--orange); box-shadow: 0 0 0 0 rgba(194,155,110,.6); animation: pulse 1.6s infinite; }
+@keyframes pulse { 70% { box-shadow: 0 0 0 10px rgba(194,155,110,0); } 100% { box-shadow: 0 0 0 0 rgba(194,155,110,0); } }
+.timer { font-variant-numeric: tabular-nums; color: var(--muted); font-size: .92rem; }
+.timer b { color: var(--fg); }
+.copy { display: flex; gap: 8px; min-width: 0; }
+.copy input { flex: 1; min-width: 0; background: var(--field); border: 1px solid var(--line-2); border-radius: 12px; padding: 12px; font-size: .85rem; color: var(--muted); }
+.howto { margin: 0; padding-left: 18px; color: var(--muted); font-size: .92rem; display: grid; gap: 4px; }
+@media (max-width: 560px) { .pix-wait { grid-template-columns: 1fr; justify-items: center; } .pix-steps { width: 100%; } }
+
+/* Cartão */
+.cc { position: relative; aspect-ratio: 1.586; max-width: 340px; width: 100%; border-radius: 18px; padding: 20px 22px; margin-bottom: 20px;
+  background: radial-gradient(120% 90% at 100% 0%, #C29B6E 0%, #5E4630 30%, #0C2B3A 70%); display: flex; flex-direction: column; justify-content: space-between;
+  box-shadow: 0 20px 40px -18px rgba(0,0,0,.6); overflow: hidden; }
+.cc::after { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px); background-size: 22px 22px; pointer-events: none; }
+.cc > * { position: relative; z-index: 1; }
+.cc-top { display: flex; justify-content: space-between; align-items: center; }
+.chip-ic { width: 40px; height: 30px; border-radius: 6px; background: linear-gradient(135deg, #E9CF8B, #B8964A); }
+.brand { font-weight: 800; font-size: 1.05rem; letter-spacing: .02em; text-transform: uppercase; opacity: .95; }
+.cc-num { font-size: clamp(1.05rem, 4.5vw, 1.35rem); font-weight: 700; letter-spacing: .12em; font-variant-numeric: tabular-nums; }
+.cc-bottom { display: flex; justify-content: space-between; gap: 12px; font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; }
+.cc-bottom small { display: block; opacity: .65; font-size: .62rem; }
+.cc-bottom span { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 190px; display: block; }
+
+.pay-btn {
+  width: 100%; margin-top: 22px; display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  border: 0; cursor: pointer; border-radius: 10px; padding: 19px; font-weight: 800; font-size: 1.08rem;
+  background: linear-gradient(90deg, #A67C52, var(--orange-2)); color: #0A1E28; box-shadow: 0 10px 30px -10px rgba(0,0,0,.4);
+  transition: transform .15s ease;
+}
+.pay-btn:hover { transform: translateY(-2px); }
+.pay-btn:disabled { opacity: .7; cursor: progress; transform: none; }
+.pay-btn svg { width: 20px; height: 20px; }
+.ghost-btn { background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 12px; padding: 0 16px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.ghost-btn:hover { border-color: var(--muted); }
+.link-btn { background: none; border: 0; color: var(--muted); text-decoration: underline; cursor: pointer; padding: 0; font-size: .9rem; justify-self: start; }
+.spin { width: 18px; height: 18px; border-radius: 50%; border: 2.5px solid rgba(10,30,40,.3); border-top-color: #0A1E28; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.terms { color: var(--muted); font-size: .8rem; text-align: center; margin: 12px 0 0; }
+
+/* Resumo */
+.summary { position: sticky; top: 20px; }
+.prod { display: grid; grid-template-columns: 76px 1fr; gap: 14px; align-items: center; }
+.cover { width: 76px; aspect-ratio: 9 / 16; border-radius: 12px; position: relative; overflow: hidden; display: flex; align-items: flex-end; padding: 6px; }
+.art { background: repeating-linear-gradient(-38deg, transparent 0 10px, rgba(194,155,110,.14) 10px 11px), radial-gradient(90% 60% at 100% 0%, rgba(194,155,110,.25), transparent 60%), linear-gradient(160deg, #123747, #0A1F2A 70%); }
+.cover .ilu { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); width: 60px; height: 60px; color: #D8B88F; }
+.cover span { position: relative; font-size: .6rem; font-weight: 800; background: rgba(0,0,0,.5); padding: 2px 6px; border-radius: 999px; }
+.prod h2 { margin: 0; font-size: 1.25rem; letter-spacing: -0.02em; }
+.prod p { margin: 2px 0 0; color: var(--muted); font-size: .9rem; }
+.lines { display: grid; gap: 10px; margin: 20px 0 0; padding: 18px 0 0; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.line { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); }
+.line.total { color: var(--fg); font-weight: 800; font-size: 1.3rem; padding-top: 10px; border-top: 1px solid var(--line); margin-top: 4px; }
+.line.disc { color: var(--green); }
+
+.bump { margin-top: 18px; border: 1.5px dashed #5C4A33; background: rgba(194,155,110,.06); border-radius: 16px; padding: 14px; display: grid; grid-template-columns: 22px 1fr; gap: 12px; cursor: pointer; }
+.bump input { width: 20px; height: 20px; accent-color: var(--orange); margin: 2px 0 0; cursor: pointer; }
+.bump strong { display: block; font-size: .98rem; }
+.bump p { margin: 2px 0 0; color: var(--muted); font-size: .88rem; }
+.bump .old { text-decoration: line-through; }
+.bump .new { color: var(--orange); font-weight: 800; }
+
+.trust { display: grid; gap: 10px; margin-top: 18px; }
+.trust div { display: grid; grid-template-columns: 20px 1fr; gap: 10px; color: var(--muted); font-size: .9rem; }
+.trust svg { width: 18px; height: 18px; color: var(--green); margin-top: 1px; }
+
+/* Sucesso */
+.done { max-width: 560px; margin: 32px auto 0; text-align: center; display: grid; gap: 16px; justify-items: center; }
+.done .ok { width: 84px; height: 84px; border-radius: 50%; background: rgba(74,222,128,.14); color: var(--green); display: grid; place-items: center; animation: pop .5s cubic-bezier(.2,1.6,.4,1); }
+.done .ok svg { width: 42px; height: 42px; }
+@keyframes pop { from { transform: scale(.4); opacity: 0; } }
+.done h1 { margin: 0; }
+.done p { color: var(--muted); margin: 0; }
+.done .box { width: 100%; text-align: left; }
+.back { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font-weight: 700; border: 1px solid var(--line-2); border-radius: 999px; padding: 14px 22px; }
+.back:hover { border-color: var(--muted); }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-pix" viewBox="0 0 24 24"><path fill="#32BCAD" d="M17.6 16.9a2.9 2.9 0 0 1-2.1-.9l-3-3a.6.6 0 0 0-.8 0l-3 3a2.9 2.9 0 0 1-2.1.9H6l3.8 3.8a3 3 0 0 0 4.3 0l3.8-3.8zM6.6 7.1c.8 0 1.5.3 2.1.9l3 3a.6.6 0 0 0 .8 0l3-3c.6-.6 1.3-.9 2.1-.9h.4l-3.8-3.8a3 3 0 0 0-4.3 0L6.1 7.1zm14.1 2.8-2.3-2.3h-.8c-.5 0-1 .2-1.4.6l-3 3a1.6 1.6 0 0 1-2.3 0l-3-3c-.4-.4-.9-.6-1.4-.6h-1L3.3 9.9a3 3 0 0 0 0 4.3l2.2 2.2h1c.5 0 1-.2 1.4-.6l3-3a1.6 1.6 0 0 1 2.3 0l3 3c.4.4.9.6 1.4.6h.8l2.3-2.3a3 3 0 0 0 0-4.2z"/></symbol>
+  <symbol id="i-card" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2.5" fill="none" stroke="#C29B6E" stroke-width="1.8"/><path d="M2.5 9.5h19" stroke="#C29B6E" stroke-width="2.4"/><path d="M6 15h4" stroke="#C29B6E" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path fill="currentColor" d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m4 7 8 6 8-6" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M19 12H5m5-5-5 5 5 5"/></symbol>
+</svg>
+
+<div class="demo band"><div class="wrap">Tela de demonstração. Nenhum pagamento é processado e nenhum dado é enviado.</div></div>
+
+<header class="band">
+  <div class="wrap">
+    <a class="logo" href="index.html#pacotes" aria-label="Voltar aos pacotes da Mirano Setup">
+      <svg viewBox="80 110 490 330" aria-hidden="true">
+        <defs><linearGradient id="gold-g" x1="0" x2="1"><stop offset="0" stop-color="#A67C52"/><stop offset="1" stop-color="#D2AF86"/></linearGradient></defs>
+        <g fill="#F4EFE9"><polygon points="127,166 320,312 268,342 127,224"/><polygon points="129,282 144,294 144,404 129,410"/><polygon points="161,306 161,398 242,360"/></g>
+        <g fill="url(#gold-g)"><polygon points="93,224 260,349 247,357 108,247 108,419 93,423"/><path d="M133,423 C262,394 402,312 503,172 C428,306 300,388 133,423 Z"/><polygon points="456,262 508,205 508,422 456,397"/><circle cx="531" cy="141" r="22"/></g>
+      </svg>
+      <span class="wordmark"><b>MIRANO</b><span>SETUP</span></span>
+    </a>
+    <span class="safe"><svg aria-hidden="true"><use href="#i-lock"/></svg>Pagamento seguro</span>
+  </div>
+</header>
+
+<main class="band">
+  <div class="wrap">
+
+    <div class="grid" id="checkout">
+      <form id="form" novalidate>
+        <h1>Finalize sua <span class="it">compra</span></h1>
+        <p class="sub">Você recebe o acesso aos vídeos no e-mail informado abaixo.</p>
+
+        <div class="box">
+          <p class="box-title"><span class="n">1</span>Seus dados</p>
+          <div class="fields">
+            <div class="field full"><label for="nome">Nome completo</label><input id="nome" autocomplete="name" placeholder="Como está no seu documento"><span class="err"></span></div>
+            <div class="field full"><label for="email">E-mail</label><input id="email" type="email" autocomplete="email" placeholder="voce@email.com"><span class="err"></span></div>
+            <div class="field"><label for="cpf">CPF</label><input id="cpf" inputmode="numeric" placeholder="000.000.000-00" maxlength="14"><span class="err"></span></div>
+            <div class="field"><label for="tel">WhatsApp</label><input id="tel" inputmode="tel" autocomplete="tel" placeholder="(00) 00000-0000" maxlength="15"><span class="err"></span></div>
+          </div>
+        </div>
+
+        <div class="box">
+          <p class="box-title"><span class="n">2</span>Pagamento</p>
+          <div class="methods" role="group" aria-label="Forma de pagamento">
+            <button class="method" type="button" data-m="pix" aria-pressed="true">
+              <svg aria-hidden="true"><use href="#i-pix"/></svg>
+              <span><strong>Pix</strong><small>Aprovação na hora</small></span><span class="radio"></span>
+            </button>
+            <button class="method" type="button" data-m="card" aria-pressed="false">
+              <svg aria-hidden="true"><use href="#i-card"/></svg>
+              <span><strong>Cartão</strong><small>Em até 3x sem juros</small></span><span class="radio"></span>
+            </button>
+          </div>
+
+          <div id="pane-pix">
+            <div id="pix-start">
+              <div class="pix-info">
+                <div><svg aria-hidden="true"><use href="#i-bolt"/></svg>O acesso é liberado assim que o Pix é pago.</div>
+                <div><svg aria-hidden="true"><use href="#i-check"/></svg>O código vale por 15 minutos.</div>
+                <div><svg aria-hidden="true"><use href="#i-check"/></svg>Pague pelo app do seu banco com o QR Code ou o código copia e cola.</div>
+              </div>
+            </div>
+            <div id="pix-wait" hidden>
+              <div class="pix-wait">
+                <div class="qr"><canvas id="qr" width="232" height="232" aria-label="QR Code Pix de exemplo"></canvas><div class="qr-cap">QR Code de exemplo</div></div>
+                <div class="pix-steps">
+                  <span class="status"><span class="pulse"></span>Aguardando pagamento</span>
+                  <span class="timer">O código expira em <b id="timer">15:00</b></span>
+                  <div class="copy"><input id="pix-code" readonly aria-label="Código Pix copia e cola"><button class="ghost-btn" type="button" id="copy-btn">Copiar</button></div>
+                  <ol class="howto">
+                    <li>Abra o app do seu banco e escolha Pix.</li>
+                    <li>Escaneie o QR Code ou cole o código.</li>
+                    <li>Confirme o valor de <b id="pix-total">R$ 29,90</b>.</li>
+                  </ol>
+                  <button class="link-btn" type="button" id="simulate">Simular pagamento aprovado</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="pane-card" hidden>
+            <div class="cc" aria-hidden="true">
+              <div class="cc-top"><span class="chip-ic"></span><span class="brand" id="cc-brand">Cartão</span></div>
+              <div class="cc-num" id="cc-num">•••• •••• •••• ••••</div>
+              <div class="cc-bottom">
+                <div><small>Titular</small><span id="cc-name">Seu nome</span></div>
+                <div><small>Validade</small><span id="cc-exp">MM/AA</span></div>
+              </div>
+            </div>
+            <div class="fields">
+              <div class="field full"><label for="num">Número do cartão</label><input id="num" inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000" maxlength="19"><span class="err"></span></div>
+              <div class="field full"><label for="titular">Nome impresso no cartão</label><input id="titular" autocomplete="cc-name" placeholder="Como aparece no cartão"><span class="err"></span></div>
+              <div class="field"><label for="exp">Validade</label><input id="exp" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/AA" maxlength="5"><span class="err"></span></div>
+              <div class="field"><label for="cvv">CVV</label><input id="cvv" inputmode="numeric" autocomplete="cc-csc" placeholder="123" maxlength="4"><span class="err"></span></div>
+              <div class="field full"><label for="parc">Parcelas</label><select id="parc"></select></div>
+            </div>
+          </div>
+
+          <button class="pay-btn" type="submit" id="pay"><svg aria-hidden="true"><use href="#i-lock"/></svg><span id="pay-label">Gerar código Pix</span></button>
+          <p class="terms">Ao continuar, você concorda com os termos de uso. Garantia de 7 dias.</p>
+        </div>
+      </form>
+
+      <aside class="summary">
+        <div class="box">
+          <p class="box-title">Seu pedido</p>
+          <div class="prod">
+            <div class="cover" id="cover"><span>30 vídeos</span></div>
+            <div><h2 id="p-nome">Pacote</h2><p id="p-area">Área</p></div>
+          </div>
+
+          <label class="bump" id="bump" hidden>
+            <input type="checkbox" id="bump-cb">
+            <div>
+              <strong>Leve também o pacote <span id="b-nome"></span></strong>
+              <p>Mais 30 vídeos por <span class="old" id="b-old"></span> <span class="new" id="b-new"></span>. Só nesta tela.</p>
+            </div>
+          </label>
+
+          <div class="lines">
+            <div class="line"><span id="l-main">Pacote</span><span id="l-main-v"></span></div>
+            <div class="line" id="l-bump" hidden><span id="l-bump-n"></span><span id="l-bump-v"></span></div>
+            <div class="line total"><span>Total</span><span id="total"></span></div>
+          </div>
+
+          <div class="trust">
+            <div><svg aria-hidden="true"><use href="#i-check"/></svg>Acesso imediato no e-mail</div>
+            <div><svg aria-hidden="true"><use href="#i-check"/></svg>Pagamento único, sem mensalidade</div>
+            <div><svg aria-hidden="true"><use href="#i-check"/></svg>Garantia de 7 dias</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <div class="done" id="done" hidden>
+      <span class="ok"><svg aria-hidden="true"><use href="#i-check"/></svg></span>
+      <h1>Pagamento <span class="it">aprovado</span></h1>
+      <p id="done-msg">Enviamos o acesso para o seu e-mail.</p>
+      <div class="box">
+        <p class="box-title">Resumo</p>
+        <div class="lines" id="done-lines" style="margin-top:0;border-top:0;padding-top:0"></div>
+      </div>
+      <p style="display:flex;gap:8px;align-items:center"><svg aria-hidden="true" style="width:18px;height:18px"><use href="#i-mail"/></svg>Não chegou? Confira a caixa de spam.</p>
+      <a class="back" href="index.html#pacotes"><svg aria-hidden="true" style="width:18px;height:18px"><use href="#i-left"/></svg>Ver outros pacotes</a>
+    </div>
+
+  </div>
+</main>
+
+<script src="pacotes.js"></script>
+<script src="ilustracoes.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  function brl(v) { return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }); }
+  function digits(s) { return s.replace(/\D/g, ""); }
+
+  // Pacote escolhido pela URL: checkout.html#joelho
+  var id = (location.hash || "").slice(1);
+  var pack = PACOTES.filter(function (p) { return p.id === id; })[0] || PACOTES[0];
+  var area = AREAS[pack.area];
+  var extra = PACOTES.filter(function (p) { return p.area === pack.area && p.id !== pack.id; })[0];
+
+  var state = { method: "pix", bump: false };
+
+  $("p-nome").textContent = "Pacote " + pack.nome;
+  $("p-area").textContent = area.nome + " · 30 vídeos";
+  $("cover").className = "cover art";
+  $("cover").insertAdjacentHTML("afterbegin", ilustra(pack.id, "ilu"));
+  $("l-main").textContent = "Pacote " + pack.nome;
+  $("l-main-v").textContent = brl(pack.preco);
+  document.title = "Pagamento · Pacote " + pack.nome;
+
+  if (extra) {
+    $("bump").hidden = false;
+    $("b-nome").textContent = extra.nome;
+    $("b-old").textContent = brl(extra.preco);
+    $("b-new").textContent = brl(PRECO_ADICIONAL);
+    $("l-bump-n").textContent = "Pacote " + extra.nome;
+    $("l-bump-v").textContent = brl(PRECO_ADICIONAL);
+  }
+
+  function total() { return pack.preco + (state.bump && extra ? PRECO_ADICIONAL : 0); }
+
+  function renderTotals() {
+    var t = total();
+    $("l-bump").hidden = !state.bump;
+    $("total").textContent = brl(t);
+    $("pix-total").textContent = brl(t);
+    var sel = $("parc"), keep = sel.value || "1";
+    sel.innerHTML = [1, 2, 3].map(function (n) {
+      return '<option value="' + n + '">' + n + "x de " + brl(t / n) + (n === 1 ? " à vista" : " sem juros") + "</option>";
+    }).join("");
+    sel.value = keep;
+    $("pay-label").textContent = state.method === "pix" ? "Gerar código Pix de " + brl(t) : "Pagar " + brl(t);
+  }
+
+  $("bump-cb").addEventListener("change", function (e) { state.bump = e.target.checked; renderTotals(); });
+
+  // Troca de método
+  document.querySelectorAll(".method").forEach(function (b) {
+    b.addEventListener("click", function () {
+      state.method = b.getAttribute("data-m");
+      document.querySelectorAll(".method").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+      $("pane-pix").hidden = state.method !== "pix";
+      $("pane-card").hidden = state.method !== "card";
+      $("pay").hidden = state.method === "pix" && !$("pix-wait").hidden;
+      renderTotals();
+    });
+  });
+
+  // Máscaras
+  function mask(el, fn) { el.addEventListener("input", function () { el.value = fn(el.value); clearErr(el); }); }
+  mask($("cpf"), function (v) { v = digits(v).slice(0, 11); return v.replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2"); });
+  mask($("tel"), function (v) { v = digits(v).slice(0, 11); if (v.length > 10) return v.replace(/(\d{2})(\d{5})(\d{0,4})/, "($1) $2-$3"); if (v.length > 6) return v.replace(/(\d{2})(\d{4})(\d{0,4})/, "($1) $2-$3"); if (v.length > 2) return v.replace(/(\d{2})(\d+)/, "($1) $2"); return v; });
+  mask($("num"), function (v) { v = digits(v).slice(0, 16); return v.replace(/(\d{4})(?=\d)/g, "$1 "); });
+  mask($("exp"), function (v) { v = digits(v).slice(0, 4); return v.length > 2 ? v.slice(0, 2) + "/" + v.slice(2) : v; });
+  mask($("cvv"), function (v) { return digits(v).slice(0, 4); });
+  ["nome", "email", "titular"].forEach(function (k) { $(k).addEventListener("input", function () { clearErr($(k)); }); });
+
+  // Prévia do cartão
+  function brand(n) {
+    if (/^4/.test(n)) return "Visa";
+    if (/^(5[1-5]|2[2-7])/.test(n)) return "Mastercard";
+    if (/^3[47]/.test(n)) return "Amex";
+    if (/^(4011|4312|4389|4514|4576|5041|5066|5067|509|6277|6362|6363|650|6516|6550)/.test(n)) return "Elo";
+    if (/^(606282|3841)/.test(n)) return "Hipercard";
+    return "Cartão";
+  }
+  $("num").addEventListener("input", function () {
+    var d = digits(this.value);
+    var shown = (d + "••••••••••••••••").slice(0, 16).replace(/(.{4})/g, "$1 ").trim();
+    $("cc-num").textContent = shown;
+    $("cc-brand").textContent = brand(d);
+  });
+  $("titular").addEventListener("input", function () { $("cc-name").textContent = this.value.trim() || "Seu nome"; });
+  $("exp").addEventListener("input", function () { $("cc-exp").textContent = this.value || "MM/AA"; });
+
+  // Validação
+  function setErr(el, msg) { var f = el.closest(".field"); f.classList.add("bad"); f.querySelector(".err").textContent = msg; }
+  function clearErr(el) { var f = el.closest(".field"); if (!f) return; f.classList.remove("bad"); f.querySelector(".err").textContent = ""; }
+  function cpfOk(c) {
+    c = digits(c);
+    if (c.length !== 11 || /^(\d)\1+$/.test(c)) return false;
+    for (var t = 9; t < 11; t++) {
+      var s = 0;
+      for (var i = 0; i < t; i++) s += +c[i] * (t + 1 - i);
+      if (((s * 10) % 11) % 10 !== +c[t]) return false;
+    }
+    return true;
+  }
+  function luhn(n) {
+    var s = 0, alt = false;
+    for (var i = n.length - 1; i >= 0; i--) { var d = +n[i]; if (alt) { d *= 2; if (d > 9) d -= 9; } s += d; alt = !alt; }
+    return n.length >= 13 && s % 10 === 0;
+  }
+  function validate() {
+    var ok = true, first = null;
+    function fail(el, msg) { setErr(el, msg); ok = false; if (!first) first = el; }
+    if ($("nome").value.trim().split(/\s+/).length < 2) fail($("nome"), "Escreva nome e sobrenome.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test($("email").value.trim())) fail($("email"), "Confira o e-mail. É nele que o acesso chega.");
+    if (!cpfOk($("cpf").value)) fail($("cpf"), "CPF inválido.");
+    if (digits($("tel").value).length < 10) fail($("tel"), "Informe DDD e número.");
+    if (state.method === "card") {
+      if (!luhn(digits($("num").value))) fail($("num"), "Número de cartão inválido.");
+      if ($("titular").value.trim().length < 3) fail($("titular"), "Escreva o nome como está no cartão.");
+      var m = $("exp").value.match(/^(\d{2})\/(\d{2})$/), now = new Date();
+      if (!m || +m[1] < 1 || +m[1] > 12 || new Date(2000 + +m[2], +m[1], 0) < new Date(now.getFullYear(), now.getMonth(), 1)) fail($("exp"), "Validade inválida.");
+      if (digits($("cvv").value).length < 3) fail($("cvv"), "CVV inválido.");
+    }
+    if (first) first.focus();
+    return ok;
+  }
+
+  // QR de exemplo (desenho, não é um Pix real)
+  function drawQR() {
+    var c = $("qr"), ctx = c.getContext("2d"), N = 29, s = c.width / N, seed = 7;
+    function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+    ctx.fillStyle = "#111";
+    function finder(x, y) {
+      ctx.fillRect(x * s, y * s, 7 * s, 7 * s);
+      ctx.fillStyle = "#fff"; ctx.fillRect((x + 1) * s, (y + 1) * s, 5 * s, 5 * s);
+      ctx.fillStyle = "#111"; ctx.fillRect((x + 2) * s, (y + 2) * s, 3 * s, 3 * s);
+    }
+    for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) {
+      var inF = (x < 8 && y < 8) || (x > N - 9 && y < 8) || (x < 8 && y > N - 9);
+      if (!inF && rnd() > 0.52) ctx.fillRect(x * s, y * s, s, s);
+    }
+    finder(0, 0); finder(N - 7, 0); finder(0, N - 7);
+  }
+
+  var timerId = null;
+  function startPix() {
+    $("pix-start").hidden = true;
+    $("pix-wait").hidden = false;
+    $("pay").hidden = true;
+    drawQR();
+    $("pix-code").value = "00020126580014BR.GOV.BCB.PIX0136chave-de-exemplo-mirano-setup520400005303986540" + total().toFixed(2) + "5802BR5913MIRANO SETUP6009SAO PAULO6304DEMO";
+    var left = 15 * 60;
+    clearInterval(timerId);
+    timerId = setInterval(function () {
+      left--;
+      $("timer").textContent = String(Math.floor(left / 60)).padStart(2, "0") + ":" + String(left % 60).padStart(2, "0");
+      if (left <= 0) { clearInterval(timerId); $("timer").textContent = "expirado"; }
+    }, 1000);
+  }
+
+  $("copy-btn").addEventListener("click", function () {
+    var inp = $("pix-code"), btn = this;
+    function done() { btn.textContent = "Copiado"; setTimeout(function () { btn.textContent = "Copiar"; }, 1800); }
+    try {
+      navigator.clipboard.writeText(inp.value).then(done, function () { inp.select(); });
+    } catch (e) { inp.select(); }
+  });
+
+  function success() {
+    clearInterval(timerId);
+    var lines = '<div class="line"><span>Pacote ' + pack.nome + '</span><span>' + brl(pack.preco) + '</span></div>';
+    if (state.bump && extra) lines += '<div class="line"><span>Pacote ' + extra.nome + '</span><span>' + brl(PRECO_ADICIONAL) + '</span></div>';
+    var forma = state.method === "pix" ? "Pix" : "Cartão " + $("parc").value + "x";
+    lines += '<div class="line"><span>Forma de pagamento</span><span>' + forma + '</span></div>';
+    lines += '<div class="line total"><span>Total</span><span>' + brl(total()) + '</span></div>';
+    $("done-lines").innerHTML = lines;
+    var email = $("email").value.trim();
+    $("done-msg").textContent = "Enviamos o acesso aos vídeos para " + email + ".";
+    $("checkout").hidden = true;
+    $("done").hidden = false;
+    window.scrollTo(0, 0);
+  }
+  $("simulate").addEventListener("click", success);
+
+  $("form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (!validate()) return;
+    if (state.method === "pix") { startPix(); return; }
+    var btn = $("pay");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin"></span>Processando pagamento';
+    setTimeout(success, 1600);
+  });
+
+  renderTotals();
+})();
+</script>
+</body>
+</html>
